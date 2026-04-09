@@ -1,0 +1,29 @@
+import { Controller, Get, HttpException, HttpStatus, Param } from '@nestjs/common';
+import { FilmsService } from './films.service';
+
+@Controller('films')
+export class FilmsController {
+    constructor(private filmsService: FilmsService) {}
+
+    // запрос на получение всех фильмов 
+    @Get()
+    findAll() {
+        return this.filmsService.findAll();
+    } 
+
+    // запрос на конкретный фильм по id
+    @Get(':id/schedule')
+    findOne(@Param('id') id: string) {
+        const result = this.filmsService.findOne(id);
+
+        
+        // если вдруг фильм не нашелся и вернулся null
+        if(!result) {
+            // вызываем ошибку Not Found
+            throw new HttpException('Film not found', HttpStatus.NOT_FOUND);
+        }
+        
+        return result;
+    }
+
+} 
