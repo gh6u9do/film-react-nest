@@ -3,23 +3,35 @@ import { Response } from 'express';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
-    catch(exception: HttpException, host: ArgumentsHost) {
+    catch(exception: unknown, host: ArgumentsHost) {
         // достаем контекст
         const ctx = host.switchToHttp();
         // получаем объект ответа
         const response = ctx.getResponse<Response>();
-        // получаем статус
-        const status = exception.getStatus();
+        // определяем статус код
+        const status = exception instanceof HttpException
+            ? exception.getStatus()
+            : HttpStatus.INTERNAL_SERVER_ERROR;
 
-        // получаем оригинальное сообщение ошибки
-        const exceptionResponse = exception.getResponse();
-        const message = typeof exceptionResponse === 'string'
-            ? exceptionResponse
-            : (exceptionResponse as any).message;
+
+        // задаем дефолтное значение сообщения об ошибке
+        let errorMessage = 'Internal server error';
+
+        // проверяем exception
+        if (exception instanceof HttpException) {
+            const exceptionResponse = exception.getResponse();
+            // в зависимости от того чем является exceptionResponse извлекаем значение
+            errorMessage = typeof exceptionResponse === 'string'
+                ? exceptionResponse
+                : (exceptionResponse as any).message;
+        } else if(exception instanceof Error) {
+            errorMessage = exception.message;
+        }
+
 
         // формируем ответ в формате OpenAPI (только поле error)
         response.status(status).json({
-            error: Array.isArray(message) ? message[0] : message,
+            error: Array.isArray(errorMessage) ? errorMessage[0] : errorMessage,
         });
     }
-}
+} 

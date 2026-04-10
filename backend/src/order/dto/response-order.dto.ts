@@ -1,12 +1,13 @@
-import { IsArray, IsNumber } from "class-validator";
+import { IsArray, IsNumber, ValidateNested } from "class-validator";
 import { ResponseTicketDto } from "./response-ticket.dto";
+import { Type } from "class-transformer";
 
-
-// ВАЖНО: у Ticket появляется до поле id
 
 export class ResponseOrderDto {
     @IsNumber()
     total: number;
     @IsArray()
+    @ValidateNested({each: true})
+    @Type(() => ResponseTicketDto)
     items: ResponseTicketDto[];
 }

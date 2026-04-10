@@ -13,8 +13,9 @@ export class FilmsController {
 
     // запрос на конкретный фильм по id
     @Get(':id/schedule')
-    findOne(@Param('id') id: string) {
-        const result = this.filmsService.findOne(id);
+    async findOne(@Param('id') id: string) {
+        // пробуем достать фильм по id из запроса
+        const result = await this.filmsService.findOne(id);
 
         
         // если вдруг фильм не нашелся и вернулся null

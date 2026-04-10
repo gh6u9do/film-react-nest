@@ -1,4 +1,4 @@
-import { IsDateString, IsNumber, IsString, IsUUID } from "class-validator";
+import { IsDateString, IsNumber, IsString, IsUUID, IsOptional } from "class-validator";
 
 
 export class TicketDto {
@@ -11,6 +11,16 @@ export class TicketDto {
     @IsString()
     @IsDateString()
     daytime: string;
+    
+    // приходит со фронта, но не используется
+    @IsOptional()
+    @IsString()
+    day?: string;
+    // приходит со фронта, но не используется
+    @IsOptional()
+    @IsString()
+    time?: string;
+
     @IsNumber()
     row: number;
     @IsNumber()
