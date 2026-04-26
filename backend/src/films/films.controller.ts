@@ -8,6 +8,7 @@ export class FilmsController {
     // запрос на получение всех фильмов 
     @Get()
     findAll() {
+        // вызываем функцию по поиску всех элементов из сервиса
         return this.filmsService.findAll();
     } 
 

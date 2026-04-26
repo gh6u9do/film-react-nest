@@ -5,7 +5,7 @@ import { FilmsModule } from "src/films/films.module";
 
 @Module({
     imports: [FilmsModule],
-    controllers: [OrderController],
+    controllers: [OrderController], 
     providers: [OrderService]
 })
 export class OrderModule {}

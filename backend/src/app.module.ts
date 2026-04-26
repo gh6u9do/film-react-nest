@@ -6,7 +6,7 @@ import * as path from "node:path";
 import { configProvider } from "./app.config.provider";
 import { FilmsModule } from './films/films.module';
 import { OrderModule } from './order/order.module';
-import { MongooseModule } from '@nestjs/mongoose';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
   imports: [
@@ -14,12 +14,19 @@ import { MongooseModule } from '@nestjs/mongoose';
       isGlobal: true,
       cache: true
     }),
-    MongooseModule.forRootAsync({
+     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('DATABASE_URL')
-      })
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        host: 'localhost',  
+        port: 5432,
+        username: configService.get<string>('DATABASE_USERNAME'),
+        password: configService.get<string>('DATABASE_PASSWORD'),
+        database: 'films',
+        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        synchronize: false, 
+      }),
     }),
     FilmsModule,
     OrderModule,

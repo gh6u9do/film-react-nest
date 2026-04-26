@@ -1,37 +1,52 @@
 import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import { Film, FilmDocument } from "./films-schema";
-import { Model } from "mongoose";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Film } from "src/entities/film.entity";
+import { Schedule } from "src/entities/schedule.entity";
+import { Repository } from "typeorm";
+
 
 @Injectable()
 export class FilmsRepository {
 
-    // внедряем FilmsModel 
-    constructor(@InjectModel(Film.name) private filmModel: Model<FilmDocument>) { }
+    constructor(
+        // внедряем репозиторий для таблицы фильмов
+        @InjectRepository(Film)
+        private filmRepository: Repository<Film>, 
 
-    // метод для поиска всех фильмов
-    findAll(): Promise<FilmDocument[]> {
-        // возвращаем все документы из коллекции фильмов
-        return this.filmModel.find({}).exec();
+        //  внедряем репозиторий для таблицы 
+        @InjectRepository(Schedule)
+        private scheduleRepository: Repository<Schedule>
+    ) {}
+
+
+    // метод для поиска всех фильмов (без расписания)
+    findAllFilms() {
+        return this.filmRepository.find({});
     }
 
-    // метод для поиска конкретного фильма по id
-    findOneById(id: string): Promise<FilmDocument | null> {
-        // возвращаем найденный фильм (если такой есть в бд)
-        return this.filmModel.findOne({ 'id': id }).exec();
+    // метод для поиска конкретного фильма по id с расписанием
+    findOneWithSchedules(filmId: string) {
+        return this.filmRepository.findOne({
+            where: {id: filmId},
+            relations: ['schedules'],
+            order: {
+                schedules: {
+                    daytime: 'ASC'
+                }
+            }
+        })
     }
 
     // метод для обновления занятых мест
-    async updateTakenSeats(filmId: string, scheduleId: string, newTaken: string[]) {
-        // обновляем данные в бд по полученному id фильма и id сеанса
-        await this.filmModel.updateOne(
-            { 
-                // ищем нужный фильм по id
-                id: filmId, 
-                // ищем нужный сеанс по id
-                'schedule.id': scheduleId }, 
-            // обновляем массив зарезервированных мест
-            {$set: { 'schedule.$.taken': newTaken }}
-        ).exec();
+    async updateTakenSeats(filmId: string, scheduleId: string, newTaken: string[] ) {
+        // преобразуем массив строк в одну строку - формат бд
+        const newTakenSeats = newTaken.join(',');
+
+        // обновляем занятые места 
+        return await this.scheduleRepository.update(
+            {filmId: filmId, id: scheduleId},
+            {taken: newTakenSeats}
+        );
     }
+
 }
