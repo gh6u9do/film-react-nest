@@ -34,3 +34,7 @@ MongoDB должна быть установлена и запущена.
 
 
 
+Ссылка на сайт: 
+    http://ghudo-films.nomorepartiessite.ru/
+        или
+    http://130.193.55.24/  
