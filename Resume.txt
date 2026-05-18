@@ -1,0 +1,63 @@
+docker-образы:
+
+1. докерезируем фронтенд
+Для фронтенда пишем докерфайл с многоэтапной сборкой
+сначала все копируем, ставим зависимости, собираем
+после - берем самый легкий образ, копируем уже собранный проект (папка dist)
+
+2. докерезируем бэкенд
+ставим зависимости, билдим, запускаем командой node dist/main.js
+
+3.пишем докерфайл для nginx
+берем легкий образ nginx:alpine, копируем его командой COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+4. пишем nginx.conf
+в конфиге указываем какой порт слушаем, далее указываем что куда переадресуется, 
+сначала указываем отдачу статики: 
+ location / {
+        root /usr/share/nginx/html;
+        try_files $uri $uri/ /index.html;
+    }
+потом указываем переадресацию к бэкенду: 
+ location /api/ {
+        proxy_pass http://backend:3000/api/;  # <-- /api/ сохраняем!
+    }
+
+5. пишем docker-compose (локально)
+в нем описываем все контейнеры, переменные окружения для них, общие внешние директории
+
+6. создаем .github/workflows/docker-publish.yml (ci)
+в нем описываем триггер срабатывания и шаги сборки контейнеров
+
+7. публикуем на сервер
+- создаем виртуальную машину
+- устанавливаем докер:
+    sudo apt update && sudo apt upgrade -y
+    sudo apt install -y docker.io docker-compose
+    sudo usermod -aG docker $USER
+    exit  # перелогиниться
+- авторизовываемся в GHCR:
+    echo "ghp_ТОКЕН" | docker login ghcr.io -u USERNAME --password-stdin
+- создаем docker-compose.yml на сервере, используем тот же файл, но:
+    Заменяем build: ./папка на image: ghcr.io/..
+    убираем контекст сборки
+- запускаем 
+    docker-compose up -d
+    docker-compose ps  # проверить статус
+- наполняем базу через pgAdmin
+- закрываем порт 8080 в фаерволе
+
+
+
+Чеклист:
+[ ] Логгеры: Dev + JSON + TSKV, выбор через env
+[ ] Dockerfile frontend: многоэтапный, ROLLUP_SKIP_NODE_NATIVE=1
+[ ] Dockerfile backend: node:20-alpine, npm ci --only=production
+[ ] Dockerfile nginx: nginx:alpine + кастомный nginx.conf
+[ ] nginx.conf: proxy_pass со слэшем в конце!
+[ ] Docker Compose: DATABASE_HOST=db (не localhost!)
+[ ] GitHub Actions: три job, permissions: packages: write
+[ ] GHCR: Personal Access Token для сервера
+[ ] Сервер: docker login ghcr.io перед docker-compose up
+[ ] База: заполнить через pgAdmin после деплоя
+[ ] Фаервол: закрыть pgAdmin (8080), оставить только 80

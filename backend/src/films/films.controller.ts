@@ -26,6 +26,6 @@ export class FilmsController {
         }
         
         return result;
-    }
+    } 
 
 } 

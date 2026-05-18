@@ -1,0 +1,64 @@
+version: "3.8"
+
+services:
+  frontend:
+    # собираем образ из ./frontend/Dockerfile
+    build: ./frontend
+    # кладем собранный dist в volume
+    volumes:
+      - frontend_dist:/app/dist
+
+  backend:
+    # собираем образ из ./backend/Dosckerfile
+    build: ./backend
+    # задаем переменные окружения
+    environment:
+      - DATABASE_HOST=db
+      - DATABASE_PORT=5432
+      - DATABASE_USERNAME=student
+      - DATABASE_PASSWORD=student
+      - DATABASE_NAME=films
+      - PORT=3000
+      - LOG_FORMAT=json
+    # указываем зависимость от контейнера db, чтобы он запустился раньше
+    depends_on:
+      - db
+
+  nginx:
+    # собираем образ из .nginx/Dockerfile
+    build: ./nginx
+    # пробрасываем порт 80 на порт хоста
+    ports:
+      - "80:80"
+    # берем dist из того же volume, куда положили фронт
+    volumes: 
+      - frontend_dist:/usr/share/nginx/html
+    # указываем зависимость от фронтенда и бэкенда
+    depends_on:
+      - frontend
+      - backend
+
+  db:
+    # берем готовый образ
+    image: postgres:15
+    # описываем переменные окружения
+    environment:
+      POSTGRES_USER: student
+      POSTGRES_PASSWORD: student
+      POSTGRES_DB: films
+    # сохраняем данные базы данных
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  pgadmin:
+    # 
+    image: dpage/pgadmin4
+    ports:
+      - "8080:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+
+volumes:
+  frontend_dist:
+  postgres_data:
